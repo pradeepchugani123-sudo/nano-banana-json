@@ -119,6 +119,7 @@
         <label><input type="checkbox" id="addWorkBoots" /> Work Boots</label>
       </div>
 
+      <div class="input-group"><label>Security verification</label><div id="imageTurnstile"></div><p class="help-text">Complete this check before generating.</p></div>
       <div class="btn-group">
         <button id="generateBtn" class="btn-primary">Generate Prompt</button>
         <div class="loader" id="loader"></div>
@@ -153,6 +154,7 @@
         <p class="help-text">Generates optimized product title, description, and SEO fields.</p>
       </div>
 
+      <div class="input-group"><label>Security verification</label><div id="descTurnstile"></div><p class="help-text">Complete this check before generating.</p></div>
       <div class="btn-group">
         <button id="genDescBtn" class="btn-primary">Generate Description</button>
         <button id="copyDescBtn" class="btn-success">Copy Markdown</button>
@@ -177,6 +179,26 @@
     </section>
   </main>
 
+  <script>
+    window.shopifyToolsTurnstileTokens = { image: "", desc: "" };
+    window.onTurnstileLoad = function () {
+      if (!window.turnstile) return;
+      window.shopifyToolsTurnstileWidgets = {};
+      window.shopifyToolsTurnstileWidgets.image = turnstile.render("#imageTurnstile", {
+        sitekey: "0x4AAAAAAF-kl4BBArREMni3", action: "shopify_tools_generate",
+        callback: function (token) { window.shopifyToolsTurnstileTokens.image = token; },
+        "expired-callback": function () { window.shopifyToolsTurnstileTokens.image = ""; },
+        "error-callback": function () { window.shopifyToolsTurnstileTokens.image = ""; }
+      });
+      window.shopifyToolsTurnstileWidgets.desc = turnstile.render("#descTurnstile", {
+        sitekey: "0x4AAAAAAF-kl4BBArREMni3", action: "shopify_tools_generate",
+        callback: function (token) { window.shopifyToolsTurnstileTokens.desc = token; },
+        "expired-callback": function () { window.shopifyToolsTurnstileTokens.desc = ""; },
+        "error-callback": function () { window.shopifyToolsTurnstileTokens.desc = ""; }
+      });
+    };
+  </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad" async defer></script>
   <!-- Image Prompt JS -->
   <script src="./prompt-generator.js"></script>
 
@@ -288,14 +310,17 @@
       const progressInterval = simulateProgress(descProgressBar, descProgressText, steps);
 
       try {
-        const res = await fetch(API_PRODUCT, {
+        const token = window.shopifyToolsTurnstileTokens && window.shopifyToolsTurnstileTokens.desc;
+        if (!token) throw new Error('Please complete the security verification above first.');
+        const res = await fetch(API_BASE + '/api/description', {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ product_url: url })
+          body: JSON.stringify({ product_url: url, turnstile_token: token })
         });
         const text = await res.text();
         let data; try { data = JSON.parse(text); } catch { throw new Error('Non-JSON response from API'); }
 
-        if (!res.ok || data.ok === false) throw new Error(data.error || 'Description request failed (' + res.status + ').');\n        const apiPayload = data.outputs || data;
+        if (!res.ok || data.ok === false) throw new Error(data.error || 'Description request failed (' + res.status + ').');\n        if (!res.ok || data.ok === false) throw new Error(data.error || 'Description request failed (' + res.status + ').');
+        const apiPayload = data.outputs || data;
         const { title, md, html, seoTitle, seoDesc } = normalizeApi(apiPayload);
 
         // Store markdown in hidden textarea for copying
@@ -336,6 +361,10 @@
         msg.style.display = 'block';
         msg.style.color = '#b91c1c';
       } finally {
+        if (window.turnstile && window.shopifyToolsTurnstileWidgets && window.shopifyToolsTurnstileWidgets.desc) {
+          window.shopifyToolsTurnstileTokens.desc = '';
+          window.turnstile.reset(window.shopifyToolsTurnstileWidgets.desc);
+        }
         genDescBtn.disabled = false;
       }
     });
