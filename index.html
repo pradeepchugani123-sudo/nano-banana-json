@@ -319,7 +319,7 @@
         const text = await res.text();
         let data; try { data = JSON.parse(text); } catch { throw new Error('Non-JSON response from API'); }
 
-        if (!res.ok || data.ok === false) throw new Error(data.error || 'Description request failed (' + res.status + ').');\n        if (!res.ok || data.ok === false) throw new Error(data.error || 'Description request failed (' + res.status + ').');
+        if (!res.ok || data.ok === false) throw new Error(data.error || 'Description request failed (' + res.status + ').');
         const apiPayload = data.outputs || data;
         const { title, md, html, seoTitle, seoDesc } = normalizeApi(apiPayload);
 
