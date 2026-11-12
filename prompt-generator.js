@@ -2,7 +2,7 @@
   "use strict";
 
   // Image Prompt endpoint
-  const API_IMAGE = 'https://us-central1-gen-lang-client-0859048251.cloudfunctions.net/shopifyGenerate';
+  const API_IMAGE = 'https://crimson-math-fbe6.pradeepchugani123.workers.dev/api/image-prompt';
 
   // --- DOM refs ---
   const shopifyUrlInput = document.getElementById('shopifyUrl');
@@ -49,8 +49,12 @@
       if (addWorkBootsCheckbox.checked) body.add_work_boots = true;
       if (showMovementCheckbox.checked) body.show_movement = true;
 
+      const token = window.shopifyToolsTurnstileTokens && window.shopifyToolsTurnstileTokens.image;
+      if (!token) throw new Error('Please complete the security verification above first.');
+      body.turnstile_token = token;
       const res = await fetch(API_IMAGE, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
       const data = await res.json();
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Image prompt request failed (' + res.status + ').');
       if (data.ok && data.prompt) {
         currentPrompt = data.prompt;
         jsonOutput.value = JSON.stringify(data.prompt, null, 2);
@@ -61,6 +65,10 @@
     } catch (err) {
       showError('Error: ' + err.message);
     } finally {
+      if (window.turnstile && window.shopifyToolsTurnstileWidgets && window.shopifyToolsTurnstileWidgets.image) {
+        window.shopifyToolsTurnstileTokens.image = '';
+        window.turnstile.reset(window.shopifyToolsTurnstileWidgets.image);
+      }
       generateBtn.disabled = false; if (loader) loader.style.display='none';
     }
   }
