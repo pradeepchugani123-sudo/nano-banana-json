@@ -22,9 +22,13 @@ function cleanText(value, max) {
     .replace(/\s+/g, " ").trim().slice(0, max || 12000);
 }
 function getMeta(html, key) {
-  const a = new RegExp('<meta[^>]+(?:property|name)=["\\']' + key + '["\\'][^>]+content=["\\']([^"\\']*)["\\']', "i");
-  const b = new RegExp('<meta[^>]+content=["\\']([^"\\']*)["\\'][^>]+(?:property|name)=["\\']' + key + '["\\']', "i");
-  return (html.match(a) || html.match(b) || [])[1] || "";
+  const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    const name = tag.match(/\\b(?:property|name)\\s*=\\s*["']([^"']+)["']/i);
+    const content = tag.match(/\\bcontent\\s*=\\s*["']([^"']*)["']/i);
+    if (name && content && name[1].toLowerCase() === key.toLowerCase()) return content[1];
+  }
+  return "";
 }
 function findProductJsonLd(html) {
   const blocks = Array.from(html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi));
