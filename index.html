@@ -196,7 +196,7 @@
     selectTab('image');
 
     // ---------- Description: direct call with progress ----------
-    const API_PRODUCT = 'https://shopifyproductgenerator-804118462449.us-central1.run.app';
+    const API_BASE = 'https://crimson-math-fbe6.pradeepchugani123.workers.dev';
     const $ = id => document.getElementById(id);
     const genDescBtn = $('genDescBtn'), copyDescBtn = $('copyDescBtn');
     const out = $('descOutput'), outWrap = $('descOutWrap'), msg = $('descMsg');
@@ -295,7 +295,7 @@
         const text = await res.text();
         let data; try { data = JSON.parse(text); } catch { throw new Error('Non-JSON response from API'); }
 
-        const apiPayload = data.outputs || data;
+        if (!res.ok || data.ok === false) throw new Error(data.error || 'Description request failed (' + res.status + ').');\n        const apiPayload = data.outputs || data;
         const { title, md, html, seoTitle, seoDesc } = normalizeApi(apiPayload);
 
         // Store markdown in hidden textarea for copying
