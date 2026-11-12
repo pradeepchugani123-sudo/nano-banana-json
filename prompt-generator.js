@@ -2,7 +2,7 @@
   "use strict";
 
   // Image Prompt endpoint
-  const API_IMAGE = 'https://us-central1-gen-lang-client-0859048251.cloudfunctions.net/shopifyGenerate';
+  const API_IMAGE = 'https://crimson-math-fbe6.pradeepchugani123.workers.dev/api/image-prompt';
 
   // --- DOM refs ---
   const shopifyUrlInput = document.getElementById('shopifyUrl');
